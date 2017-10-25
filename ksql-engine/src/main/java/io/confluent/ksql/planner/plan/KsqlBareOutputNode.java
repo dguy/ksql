@@ -26,8 +26,8 @@ import java.util.Optional;
 
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetastoreUtil;
-import io.confluent.ksql.planner.ExecutionPlanner;
-import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.planner.ExecutionPlanBuilder;
+import io.confluent.ksql.structured.ExecutionPlan;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 
@@ -53,10 +53,10 @@ public class KsqlBareOutputNode extends OutputNode {
   }
 
   @Override
-  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
-                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
-                                    MetastoreUtil metastoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
-    final PhysicalPlan schemaKStream = getSource().buildPhysical(executionPlanner,
+  public ExecutionPlan buildExecutionPlan(final ExecutionPlanBuilder executionPlanBuilder,
+                                          KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                          MetastoreUtil metastoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
+    final ExecutionPlan schemaKStream = getSource().buildExecutionPlan(executionPlanBuilder,
         ksqlConfig, kafkaTopicClient,
         metaStoreUtil, functionRegistry, props);
 

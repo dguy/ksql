@@ -17,6 +17,6 @@
 package io.confluent.ksql.structured;
 
 
-public interface Table extends PhysicalPlan {
+public interface Table extends ExecutionPlan {
 
 }

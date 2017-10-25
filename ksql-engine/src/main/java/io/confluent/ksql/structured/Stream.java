@@ -23,7 +23,7 @@ import org.apache.kafka.connect.data.Schema;
 import io.confluent.ksql.GenericRow;
 import io.confluent.ksql.serde.KsqlTopicSerDe;
 
-public interface Stream extends PhysicalPlan {
+public interface Stream extends ExecutionPlan {
 
   GroupedStream groupByKey(Serde<String> string, Serde<GenericRow> genericRowSerde);
 

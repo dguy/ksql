@@ -16,7 +16,7 @@
  */
 package io.confluent.ksql.physical;
 
-import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.planner.ExecutionPlanBuilder;
 
-public class KafkaStreamsExecutionPlanner implements ExecutionPlanner {
+public class KafkaStreamsExecutionPlanner implements ExecutionPlanBuilder {
 }

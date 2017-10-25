@@ -177,7 +177,7 @@ public class KsqlStructuredDataOutputNodeTest {
 
   private SchemaKStream buildStream() {
     builder = new StreamsBuilder();
-    return outputNode.buildPhysical(builder,
+    return outputNode.buildExecutionPlan(builder,
         ksqlConfig, topicClient,
         metaStoreUtil, functionRegistry, new HashMap<>());
   }

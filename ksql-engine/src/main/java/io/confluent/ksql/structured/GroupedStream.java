@@ -23,7 +23,7 @@ import io.confluent.ksql.GenericRow;
 import io.confluent.ksql.function.UdafAggregator;
 import io.confluent.ksql.parser.tree.WindowExpression;
 
-public interface GroupedStream extends PhysicalPlan {
+public interface GroupedStream extends ExecutionPlan {
 
   @SuppressWarnings("unchecked")
   Table aggregate(Initializer initializer,

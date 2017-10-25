@@ -72,7 +72,7 @@ public class StructuredDataSourceNodeTest {
   }
 
   private SchemaKStream build(final StructuredDataSourceNode node) {
-    return node.buildPhysical(builder,
+    return node.buildExecutionPlan(builder,
         ksqlConfig, new FakeKafkaTopicClient(),
         metaStoreUtil, functionRegistry, new HashMap<>());
   }

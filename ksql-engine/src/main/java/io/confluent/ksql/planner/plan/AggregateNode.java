@@ -29,9 +29,9 @@ import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.parser.tree.Expression;
 import io.confluent.ksql.parser.tree.FunctionCall;
 import io.confluent.ksql.parser.tree.WindowExpression;
-import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.planner.ExecutionPlanBuilder;
 import io.confluent.ksql.structured.GroupedStream;
-import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.ExecutionPlan;
 import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.AggregateExpressionRewriter;
 import io.confluent.ksql.util.KafkaTopicClient;
@@ -172,12 +172,12 @@ public class AggregateNode extends PlanNode {
   }
 
   @Override
-  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
-                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
-                                    MetastoreUtil metaStoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
+  public ExecutionPlan buildExecutionPlan(final ExecutionPlanBuilder executionPlanBuilder,
+                                          KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                          MetastoreUtil metaStoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
     final StructuredDataSourceNode streamSourceNode = getTheSourceNode();
-    final PhysicalPlan sourceSchemaKStream = getSource().buildPhysical(executionPlanner, ksqlConfig, kafkaTopicClient, metaStoreUtil, functionRegistry, props);
-    final PhysicalPlan rekeyedSchemaKStream = aggregateReKey(sourceSchemaKStream);
+    final ExecutionPlan sourceSchemaKStream = getSource().buildExecutionPlan(executionPlanBuilder, ksqlConfig, kafkaTopicClient, metaStoreUtil, functionRegistry, props);
+    final ExecutionPlan rekeyedSchemaKStream = aggregateReKey(sourceSchemaKStream);
 
     // Pre aggregate computations
     final List<Pair<String, Expression>> aggArgExpansionList = new ArrayList<>();
@@ -185,7 +185,7 @@ public class AggregateNode extends PlanNode {
     collectAggregateArgExpressions(getRequiredColumnList(), aggArgExpansionList, expressionNames);
     collectAggregateArgExpressions(getAggregateFunctionArguments(), aggArgExpansionList, expressionNames);
 
-    final PhysicalPlan aggregateArgExpanded = rekeyedSchemaKStream.select(aggArgExpansionList);
+    final ExecutionPlan aggregateArgExpanded = rekeyedSchemaKStream.select(aggArgExpansionList);
 
     final Serde<GenericRow> genericRowSerde =
         SerDeUtil.getRowSerDe(streamSourceNode.getStructuredDataSource()
@@ -225,7 +225,7 @@ public class AggregateNode extends PlanNode {
 
     final Schema aggStageSchema = buildAggregateSchema(table, functionRegistry);
 
-    PhysicalPlan result = table.withSchema(aggStageSchema);
+    ExecutionPlan result = table.withSchema(aggStageSchema);
 
     if (getHavingExpressions() != null) {
       result = result.filter(getHavingExpressions());
@@ -234,7 +234,7 @@ public class AggregateNode extends PlanNode {
     return result.select(getFinalSelectExpressions());
   }
 
-  private PhysicalPlan aggregateReKey(final PhysicalPlan sourceSchemaKStream) {
+  private ExecutionPlan aggregateReKey(final ExecutionPlan sourceSchemaKStream) {
     StringBuilder aggregateKeyName = new StringBuilder();
     List<Integer> newKeyIndexes = new ArrayList<>();
     boolean addSeparator = false;
@@ -269,7 +269,7 @@ public class AggregateNode extends PlanNode {
 //        functionRegistry);
   }
 
-  private Map<Integer, Integer> createAggregateValueToValueColumnMap(final PhysicalPlan aggregateArgExpanded,
+  private Map<Integer, Integer> createAggregateValueToValueColumnMap(final ExecutionPlan aggregateArgExpanded,
                                                                      final SchemaBuilder aggregateSchema) {
     Map<Integer, Integer> aggValToValColumnMap = new HashMap<>();
     int nonAggColumnIndex = 0;
@@ -310,7 +310,7 @@ public class AggregateNode extends PlanNode {
   }
 
   private Map<Integer, KsqlAggregateFunction> createAggValToFunctionMap(final Map<String, Integer> expressionNames,
-                                                                        final PhysicalPlan aggregateArgExpanded,
+                                                                        final ExecutionPlan aggregateArgExpanded,
                                                                         final SchemaBuilder aggregateSchema,
                                                                         final List<Object> resultColumns,
                                                                         final FunctionRegistry functionRegistry) {

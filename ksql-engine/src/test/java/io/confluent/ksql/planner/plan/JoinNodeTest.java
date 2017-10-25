@@ -103,7 +103,7 @@ public class JoinNodeTest {
 
   private SchemaKStream buildStream() {
     builder = new StreamsBuilder();
-    return joinNode.buildPhysical(builder,
+    return joinNode.buildExecutionPlan(builder,
         ksqlConfig, topicClient,
         metaStoreUtil, functionRegistry, new HashMap<>());
   }

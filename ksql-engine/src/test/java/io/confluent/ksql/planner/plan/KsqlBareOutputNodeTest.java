@@ -116,7 +116,7 @@ public class KsqlBareOutputNodeTest {
   private SchemaKStream build() {
     final String simpleSelectFilter = "SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
     final KsqlBareOutputNode planNode = (KsqlBareOutputNode) planBuilder.buildLogicalPlan(simpleSelectFilter);
-    return planNode.buildPhysical(builder,
+    return planNode.buildExecutionPlan(builder,
         ksqlConfig, new FakeKafkaTopicClient(),
         metaStoreUtil, functionRegistry, new HashMap<>());
   }

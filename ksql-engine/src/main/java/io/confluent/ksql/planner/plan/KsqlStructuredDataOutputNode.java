@@ -23,10 +23,10 @@ import io.confluent.ksql.ddl.DdlConfig;
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.KsqlTopic;
 import io.confluent.ksql.metastore.MetastoreUtil;
-import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.planner.ExecutionPlanBuilder;
 import io.confluent.ksql.serde.KsqlTopicSerDe;
 import io.confluent.ksql.serde.avro.KsqlAvroTopicSerDe;
-import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.ExecutionPlan;
 import io.confluent.ksql.structured.Stream;
 import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.KafkaTopicClient;
@@ -80,12 +80,12 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
   }
 
   @Override
-  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
-                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
-                                    final MetastoreUtil metaStoreUtil,
-                                    final FunctionRegistry functionRegistry, final Map<String, Object> props) {
+  public ExecutionPlan buildExecutionPlan(final ExecutionPlanBuilder executionPlanBuilder,
+                                          KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                          final MetastoreUtil metaStoreUtil,
+                                          final FunctionRegistry functionRegistry, final Map<String, Object> props) {
 
-    final PhysicalPlan schemaKStream = getSource().buildPhysical(executionPlanner,
+    final ExecutionPlan schemaKStream = getSource().buildExecutionPlan(executionPlanBuilder,
         ksqlConfig, kafkaTopicClient,
         metaStoreUtil, functionRegistry, props);
     final Set<Integer> rowkeyIndexes = SchemaUtil.getRowTimeRowKeyIndexes(getSchema());
@@ -111,7 +111,7 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
           ));
     }
 
-    final PhysicalPlan result = createOutputStream(schemaKStream,
+    final ExecutionPlan result = createOutputStream(schemaKStream,
         outputNodeBuilder,
         functionRegistry,
         outputProperties);
@@ -132,7 +132,7 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
     return result;
   }
 
-  private PhysicalPlan createOutputStream(final PhysicalPlan input,
+  private ExecutionPlan createOutputStream(final ExecutionPlan input,
                                            final KsqlStructuredDataOutputNode.Builder outputNodeBuilder,
                                            final FunctionRegistry functionRegistry,
                                            final Map<String, Object> outputProperties) {

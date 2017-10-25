@@ -27,9 +27,9 @@ import java.util.Map;
 
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetastoreUtil;
-import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.planner.ExecutionPlanBuilder;
 import io.confluent.ksql.serde.KsqlTopicSerDe;
-import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.ExecutionPlan;
 import io.confluent.ksql.structured.Stream;
 import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.KafkaTopicClient;
@@ -146,21 +146,21 @@ public class JoinNode extends PlanNode {
   }
 
   @Override
-  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
-                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
-                                    MetastoreUtil metaStoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
+  public ExecutionPlan buildExecutionPlan(final ExecutionPlanBuilder executionPlanBuilder,
+                                          KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                          MetastoreUtil metaStoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
     if (!isLeftJoin()) {
       throw new KsqlException("Join type is not supported yet: " + getType());
     }
 
-    final Table table = tableForJoin(executionPlanner,
+    final Table table = tableForJoin(executionPlanBuilder,
         ksqlConfig,
         kafkaTopicClient,
         metaStoreUtil,
         functionRegistry,
         props);
 
-    final Stream stream = streamForJoin((Stream)getLeft().buildPhysical(executionPlanner,
+    final Stream stream = streamForJoin((Stream)getLeft().buildExecutionPlan(executionPlanBuilder,
         ksqlConfig, kafkaTopicClient,
         metaStoreUtil, functionRegistry, props), getLeftKeyFieldName());
 
@@ -173,14 +173,14 @@ public class JoinNode extends PlanNode {
   }
 
   private Table tableForJoin(
-      final ExecutionPlanner planner,
+      final ExecutionPlanBuilder planner,
       final KsqlConfig ksqlConfig,
       final KafkaTopicClient kafkaTopicClient,
       final MetastoreUtil metaStoreUtil,
       final FunctionRegistry functionRegistry,
       final Map<String, Object> props) {
 
-    final PhysicalPlan plan = right.buildPhysical(planner, ksqlConfig, kafkaTopicClient, metaStoreUtil, functionRegistry, props);
+    final ExecutionPlan plan = right.buildExecutionPlan(planner, ksqlConfig, kafkaTopicClient, metaStoreUtil, functionRegistry, props);
     if (!(plan instanceof Table)) {
       throw new KsqlException("Unsupported Join. Only stream-table joins are supported, but was "
           + getLeft() + "-" + getRight());

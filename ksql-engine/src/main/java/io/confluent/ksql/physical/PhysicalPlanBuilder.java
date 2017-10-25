@@ -84,7 +84,7 @@ public class PhysicalPlanBuilder {
   }
 
   public QueryMetadata buildPhysicalPlan(final Pair<String, PlanNode> statementPlanPair) throws Exception {
-    final SchemaKStream resultStream = statementPlanPair.getRight().buildPhysical(builder,
+    final SchemaKStream resultStream = statementPlanPair.getRight().buildExecutionPlan(builder,
         ksqlConfig, kafkaTopicClient,
         metaStoreUtil, functionRegistry, new HashMap<>());
     final OutputNode outputNode = resultStream.outputNode();

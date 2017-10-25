@@ -125,7 +125,7 @@ public class AggregateNodeTest {
 
   private SchemaKStream buildStream() {
     builder = new StreamsBuilder();
-    return aggregateNode.buildPhysical(builder,
+    return aggregateNode.buildExecutionPlan(builder,
         ksqlConfig, topicClient,
         metaStoreUtil, functionRegistry, new HashMap<>());
   }

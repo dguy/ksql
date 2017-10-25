@@ -25,7 +25,7 @@ import io.confluent.ksql.GenericRow;
 import io.confluent.ksql.structured.Stream;
 import io.confluent.ksql.structured.Table;
 
-public interface ExecutionPlanner {
+public interface ExecutionPlanBuilder {
   Stream stream(String kafkaTopicName, Field windowedGenericRowConsumed);
 
   Table windowedTable(String kafkaTopicName, Topology.AutoOffsetReset autoOffsetReset);

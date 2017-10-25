@@ -30,24 +30,24 @@ import io.confluent.ksql.parser.tree.Expression;
 import io.confluent.ksql.planner.plan.OutputNode;
 import io.confluent.ksql.util.Pair;
 
-public interface PhysicalPlan {
+public interface ExecutionPlan {
   Schema getSchema();
 
-  PhysicalPlan withSchema(Schema schema);
+  ExecutionPlan withSchema(Schema schema);
 
-  PhysicalPlan filter(Expression havingExpressions);
+  ExecutionPlan filter(Expression havingExpressions);
 
-  PhysicalPlan selectKey(KeyValueMapper<String, GenericRow, String> mapper);
+  ExecutionPlan selectKey(KeyValueMapper<String, GenericRow, String> mapper);
 
-  PhysicalPlan select(List<Pair<String,Expression>> finalSelectExpressions);
+  ExecutionPlan select(List<Pair<String,Expression>> finalSelectExpressions);
 
   GroupedStream groupByKey(Serde<String> string, Serde<GenericRow> genericRowSerde);
 
   Field keyField();
 
-  PhysicalPlan withOutputNode(OutputNode ksqlBareOutputNode);
+  ExecutionPlan withOutputNode(OutputNode ksqlBareOutputNode);
 
-  PhysicalPlan withLimit(Optional<Integer> limit);
+  ExecutionPlan withLimit(Optional<Integer> limit);
 
-  PhysicalPlan into(String kafkaTopicName, Serde<GenericRow> rowSerDe, Set<Integer> rowkeyIndexes);
+  ExecutionPlan into(String kafkaTopicName, Serde<GenericRow> rowSerDe, Set<Integer> rowkeyIndexes);
 }

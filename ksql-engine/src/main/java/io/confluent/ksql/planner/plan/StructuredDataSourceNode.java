@@ -25,9 +25,9 @@ import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.KsqlTable;
 import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.metastore.StructuredDataSource;
-import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.planner.ExecutionPlanBuilder;
 import io.confluent.ksql.serde.WindowedSerde;
-import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.ExecutionPlan;
 import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
@@ -121,9 +121,9 @@ public class StructuredDataSourceNode
   }
 
   @Override
-  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
-                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
-                                    MetastoreUtil metastoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
+  public ExecutionPlan buildExecutionPlan(final ExecutionPlanBuilder executionPlanBuilder,
+                                          KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                          MetastoreUtil metastoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
     if (getTimestampField() != null) {
       int timestampColumnIndex = getTimeStampColumnIndex();
       ksqlConfig.put(KsqlConfig.KSQL_TIMESTAMP_COLUMN_INDEX, timestampColumnIndex);
@@ -141,7 +141,7 @@ public class StructuredDataSourceNode
       final KsqlTable table = (KsqlTable) getStructuredDataSource();
 
       return createTable(
-          executionPlanner,
+          executionPlanBuilder,
           getAutoOffsetReset(props),
           table,
           genericRowSerde,
@@ -151,7 +151,7 @@ public class StructuredDataSourceNode
 
     }
 
-    return executionPlanner.stream(getStructuredDataSource().getKsqlTopic().getKafkaTopicName(), getKeyField());
+    return executionPlanBuilder.stream(getStructuredDataSource().getKsqlTopic().getKafkaTopicName(), getKeyField());
 //    return new SchemaKStream(getSchema(),
           // NOTE: This moves into ExecutionPlanner
 //        builder
@@ -210,10 +210,10 @@ public class StructuredDataSourceNode
     return -1;
   }
 
-  private Table createTable(ExecutionPlanner planner, final Topology.AutoOffsetReset autoOffsetReset,
-                             final KsqlTable ksqlTable,
-                             final Serde<GenericRow> genericRowSerde,
-                             final Serde<GenericRow> genericRowSerdeAfterRead) {
+  private Table createTable(ExecutionPlanBuilder planner, final Topology.AutoOffsetReset autoOffsetReset,
+                            final KsqlTable ksqlTable,
+                            final Serde<GenericRow> genericRowSerde,
+                            final Serde<GenericRow> genericRowSerdeAfterRead) {
     if (ksqlTable.isWindowed()) {
       return planner.windowedTable(ksqlTable.getKsqlTopic().getKafkaTopicName(), autoOffsetReset);
         // NOTE: This would move into the implementation of ExecutionPlanner
