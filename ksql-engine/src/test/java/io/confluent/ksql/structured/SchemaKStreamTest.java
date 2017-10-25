@@ -156,7 +156,7 @@ public class SchemaKStreamTest {
     SchemaKStream rekeyedSchemaKStream = initialSchemaKStream.selectKey(initialSchemaKStream
                                                                             .getSchema().fields()
                                                                             .get(1));
-    Assert.assertTrue(rekeyedSchemaKStream.getKeyField().name().equalsIgnoreCase("TEST1.COL1"));
+    Assert.assertTrue(rekeyedSchemaKStream.keyField().name().equalsIgnoreCase("TEST1.COL1"));
 
   }
 

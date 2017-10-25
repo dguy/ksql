@@ -34,13 +34,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.confluent.ksql.ddl.DdlConfig;
-import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.KsqlStream;
 import io.confluent.ksql.metastore.KsqlTopic;
-import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.serde.json.KsqlJsonTopicSerDe;
 import io.confluent.ksql.structured.SchemaKStream;
-import io.confluent.ksql.util.FakeKafkaTopicClient;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 
@@ -168,7 +165,7 @@ public class KsqlStructuredDataOutputNodeTest {
   public void shouldPartitionByFieldNameInPartitionByProperty() {
     createOutputNode(Collections.singletonMap(DdlConfig.PARTITION_BY_PROPERTY, "field2"));
     final SchemaKStream schemaKStream = buildStream();
-    final Field keyField = schemaKStream.getKeyField();
+    final Field keyField = schemaKStream.keyField();
     assertThat(keyField, equalTo(new Field("field2", 1, Schema.STRING_SCHEMA)));
     assertThat(schemaKStream.getSchema().fields(), equalTo(schema.fields()));
   }
@@ -180,12 +177,9 @@ public class KsqlStructuredDataOutputNodeTest {
 
   private SchemaKStream buildStream() {
     builder = new StreamsBuilder();
-    return outputNode.buildStream(builder,
-        ksqlConfig,
-        topicClient,
-        new MetastoreUtil(),
-        new FunctionRegistry(),
-        new HashMap<>());
+    return outputNode.buildPhysical(builder,
+        ksqlConfig, topicClient,
+        metaStoreUtil, functionRegistry, new HashMap<>());
   }
 
 }

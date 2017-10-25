@@ -25,18 +25,13 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.confluent.ksql.function.FunctionRegistry;
-import io.confluent.ksql.metastore.KsqlStream;
-import io.confluent.ksql.metastore.KsqlTable;
 import io.confluent.ksql.metastore.MetaStore;
-import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.metastore.StructuredDataSource;
 import io.confluent.ksql.structured.LogicalPlanBuilder;
 import io.confluent.ksql.structured.SchemaKStream;
@@ -108,12 +103,9 @@ public class JoinNodeTest {
 
   private SchemaKStream buildStream() {
     builder = new StreamsBuilder();
-    return joinNode.buildStream(builder,
-        ksqlConfig,
-        topicClient,
-        new MetastoreUtil(),
-        new FunctionRegistry(),
-        new HashMap<>());
+    return joinNode.buildPhysical(builder,
+        ksqlConfig, topicClient,
+        metaStoreUtil, functionRegistry, new HashMap<>());
   }
 
 }

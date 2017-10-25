@@ -23,10 +23,12 @@ import io.confluent.ksql.ddl.DdlConfig;
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.KsqlTopic;
 import io.confluent.ksql.metastore.MetastoreUtil;
+import io.confluent.ksql.planner.ExecutionPlanner;
 import io.confluent.ksql.serde.KsqlTopicSerDe;
 import io.confluent.ksql.serde.avro.KsqlAvroTopicSerDe;
-import io.confluent.ksql.structured.SchemaKStream;
-import io.confluent.ksql.structured.SchemaKTable;
+import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.Stream;
+import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.KsqlException;
@@ -35,9 +37,7 @@ import io.confluent.ksql.util.SerDeUtil;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.streams.StreamsBuilder;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -80,19 +80,14 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
   }
 
   @Override
-  public SchemaKStream buildStream(final StreamsBuilder builder,
-                                   final KsqlConfig ksqlConfig,
-                                   final KafkaTopicClient kafkaTopicClient,
-                                   final MetastoreUtil metastoreUtil,
-                                   final FunctionRegistry functionRegistry,
-                                   final Map<String, Object> props) {
+  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
+                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                    final MetastoreUtil metaStoreUtil,
+                                    final FunctionRegistry functionRegistry, final Map<String, Object> props) {
 
-    final SchemaKStream schemaKStream = getSource().buildStream(builder,
-        ksqlConfig,
-        kafkaTopicClient,
-        metastoreUtil,
-        functionRegistry,
-        props);
+    final PhysicalPlan schemaKStream = getSource().buildPhysical(executionPlanner,
+        ksqlConfig, kafkaTopicClient,
+        metaStoreUtil, functionRegistry, props);
     final Set<Integer> rowkeyIndexes = SchemaUtil.getRowTimeRowKeyIndexes(getSchema());
     final Builder outputNodeBuilder
         = Builder.from(this);
@@ -101,7 +96,7 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
     outputNodeBuilder.withSchema(schema);
 
     if (getTopicSerde() instanceof KsqlAvroTopicSerDe) {
-      addAvroSchemaToResultTopic(outputNodeBuilder, schema, metastoreUtil);
+      addAvroSchemaToResultTopic(outputNodeBuilder, schema, metaStoreUtil);
     }
 
     final Map<String, Object> outputProperties = getOutputProperties();
@@ -116,7 +111,7 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
           ));
     }
 
-    final SchemaKStream result = createOutputStream(schemaKStream,
+    final PhysicalPlan result = createOutputStream(schemaKStream,
         outputNodeBuilder,
         functionRegistry,
         outputProperties);
@@ -132,40 +127,42 @@ public class KsqlStructuredDataOutputNode extends OutputNode {
     );
 
 
-    result.setOutputNode(outputNodeBuilder.withSchema(SchemaUtil.addImplicitRowTimeRowKeyToSchema(noRowKey.getSchema()))
+    result.withOutputNode(outputNodeBuilder.withSchema(SchemaUtil.addImplicitRowTimeRowKeyToSchema(noRowKey.getSchema()))
         .build());
     return result;
   }
 
-  private SchemaKStream createOutputStream(final SchemaKStream schemaKStream,
+  private PhysicalPlan createOutputStream(final PhysicalPlan input,
                                            final KsqlStructuredDataOutputNode.Builder outputNodeBuilder,
                                            final FunctionRegistry functionRegistry,
                                            final Map<String, Object> outputProperties) {
 
-    if (schemaKStream instanceof SchemaKTable) {
-      return schemaKStream;
+    if (input instanceof Table) {
+      return input;
     }
 
-    final SchemaKStream result = new SchemaKStream(getSchema(),
-        schemaKStream.getKstream(),
-        this
-            .getKeyField(),
-        Collections.singletonList(schemaKStream),
-        SchemaKStream.Type.SINK, functionRegistry
-    );
+
+    final Stream stream = (Stream) input.withSchema(getSchema());
+//    final SchemaKStream result = new SchemaKStream(getSchema(),
+//        input.getKstream(),
+//        this
+//            .getKeyField(),
+//        Collections.singletonList(input),
+//        SchemaKStream.Type.SINK, functionRegistry
+//    );
 
     if (outputProperties.containsKey(DdlConfig.PARTITION_BY_PROPERTY)) {
       String keyFieldName = outputProperties.get(DdlConfig.PARTITION_BY_PROPERTY).toString();
       Field keyField = SchemaUtil.getFieldByName(
-          result.getSchema(), keyFieldName)
+          stream.getSchema(), keyFieldName)
           .orElseThrow(() -> new KsqlException(String.format("Column %s does not exist in the result schema."
                   + " Error in Partition By clause.",
               keyFieldName)));
 
       outputNodeBuilder.withKeyField(keyField);
-      return result.selectKey(keyField);
+      return stream.selectKey(keyField);
     }
-    return result;
+    return stream;
   }
   private void addAvroSchemaToResultTopic(final KsqlStructuredDataOutputNode.Builder builder,
                                           final Schema schema,

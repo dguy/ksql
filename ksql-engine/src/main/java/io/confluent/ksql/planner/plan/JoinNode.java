@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.streams.StreamsBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,9 +27,11 @@ import java.util.Map;
 
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetastoreUtil;
+import io.confluent.ksql.planner.ExecutionPlanner;
 import io.confluent.ksql.serde.KsqlTopicSerDe;
-import io.confluent.ksql.structured.SchemaKStream;
-import io.confluent.ksql.structured.SchemaKTable;
+import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.Stream;
+import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.KsqlException;
@@ -145,53 +146,47 @@ public class JoinNode extends PlanNode {
   }
 
   @Override
-  public SchemaKStream buildStream(final StreamsBuilder builder,
-                                   final KsqlConfig ksqlConfig,
-                                   final KafkaTopicClient kafkaTopicClient,
-                                   final MetastoreUtil metastoreUtil,
-                                   final FunctionRegistry functionRegistry,
-                                   final Map<String, Object> props) {
+  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
+                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                    MetastoreUtil metaStoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
     if (!isLeftJoin()) {
       throw new KsqlException("Join type is not supported yet: " + getType());
     }
 
-    final SchemaKTable table = tableForJoin(builder,
+    final Table table = tableForJoin(executionPlanner,
         ksqlConfig,
         kafkaTopicClient,
-        metastoreUtil,
+        metaStoreUtil,
         functionRegistry,
         props);
 
-    final SchemaKStream stream = streamForJoin(getLeft().buildStream(builder,
-        ksqlConfig,
-        kafkaTopicClient,
-        metastoreUtil,
-        functionRegistry,
-        props), getLeftKeyFieldName());
+    final Stream stream = streamForJoin((Stream)getLeft().buildPhysical(executionPlanner,
+        ksqlConfig, kafkaTopicClient,
+        metaStoreUtil, functionRegistry, props), getLeftKeyFieldName());
 
     final KsqlTopicSerDe joinSerDe = getResultTopicSerde(this);
     return stream.leftJoin(table,
         getSchema(),
-        getSchema().field(getLeftAlias() + "." + stream.getKeyField().name()),
+        getSchema().field(getLeftAlias() + "." + stream.keyField().name()),
         joinSerDe);
 
   }
 
-  private SchemaKTable tableForJoin(
-      final StreamsBuilder builder,
+  private Table tableForJoin(
+      final ExecutionPlanner planner,
       final KsqlConfig ksqlConfig,
       final KafkaTopicClient kafkaTopicClient,
-      final MetastoreUtil metastoreUtil,
+      final MetastoreUtil metaStoreUtil,
       final FunctionRegistry functionRegistry,
       final Map<String, Object> props) {
 
-    final SchemaKStream schemaKStream = right.buildStream(builder, ksqlConfig, kafkaTopicClient, metastoreUtil, functionRegistry, props);
-    if (!(schemaKStream instanceof SchemaKTable)) {
+    final PhysicalPlan plan = right.buildPhysical(planner, ksqlConfig, kafkaTopicClient, metaStoreUtil, functionRegistry, props);
+    if (!(plan instanceof Table)) {
       throw new KsqlException("Unsupported Join. Only stream-table joins are supported, but was "
           + getLeft() + "-" + getRight());
     }
 
-    return (SchemaKTable) schemaKStream;
+    return (Table) plan;
   }
 
 
@@ -208,9 +203,9 @@ public class JoinNode extends PlanNode {
     }
   }
 
-  private SchemaKStream streamForJoin(final SchemaKStream stream, final String leftKeyFieldName) {
-    if (stream.getKeyField() == null
-        || !stream.getKeyField().name().equals(leftKeyFieldName)) {
+  private Stream streamForJoin(final Stream stream, final String leftKeyFieldName) {
+    if (stream.keyField() == null
+        || !stream.keyField().name().equals(leftKeyFieldName)) {
       final Field field = SchemaUtil.getFieldByName(stream.getSchema(),
           leftKeyFieldName).orElseThrow(() -> new KsqlException("couldn't find key field: "
           + leftKeyFieldName

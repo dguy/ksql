@@ -23,13 +23,13 @@ import com.google.common.collect.ImmutableList;
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.parser.tree.Expression;
-import io.confluent.ksql.structured.SchemaKStream;
+import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.structured.PhysicalPlan;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.streams.StreamsBuilder;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.List;
@@ -87,13 +87,10 @@ public class FilterNode
   }
 
   @Override
-  public SchemaKStream buildStream(final StreamsBuilder builder,
-                                   final KsqlConfig ksqlConfig,
-                                   final KafkaTopicClient kafkaTopicClient,
-                                   final MetastoreUtil metastoreUtil,
-                                   final FunctionRegistry functionRegistry,
-                                   final Map<String, Object> props) {
-    return getSource().buildStream(builder, ksqlConfig, kafkaTopicClient, metastoreUtil, functionRegistry, props)
+  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
+                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                    MetastoreUtil metastoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
+    return getSource().buildPhysical(executionPlanner, ksqlConfig, kafkaTopicClient, metaStoreUtil, functionRegistry, props)
         .filter(getPredicate());
   }
 }

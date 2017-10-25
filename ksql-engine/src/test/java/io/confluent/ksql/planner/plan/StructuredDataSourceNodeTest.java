@@ -29,11 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.KsqlStream;
 import io.confluent.ksql.metastore.KsqlTable;
 import io.confluent.ksql.metastore.KsqlTopic;
-import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.serde.json.KsqlJsonTopicSerDe;
 import io.confluent.ksql.structured.SchemaKStream;
 import io.confluent.ksql.structured.SchemaKTable;
@@ -74,12 +72,9 @@ public class StructuredDataSourceNodeTest {
   }
 
   private SchemaKStream build(final StructuredDataSourceNode node) {
-    return node.buildStream(builder,
-        ksqlConfig,
-        new FakeKafkaTopicClient(),
-        new MetastoreUtil(),
-        new FunctionRegistry(),
-        new HashMap<>());
+    return node.buildPhysical(builder,
+        ksqlConfig, new FakeKafkaTopicClient(),
+        metaStoreUtil, functionRegistry, new HashMap<>());
   }
 
 
@@ -122,7 +117,7 @@ public class StructuredDataSourceNodeTest {
 
   @Test
   public void shouldExtracKeyField() {
-    assertThat(stream.getKeyField(), equalTo(new Field("key", 4, Schema.STRING_SCHEMA)));
+    assertThat(stream.keyField(), equalTo(new Field("key", 4, Schema.STRING_SCHEMA)));
   }
 
   @Test

@@ -33,7 +33,7 @@ import org.apache.kafka.streams.state.WindowStore;
 
 import java.util.List;
 
-public class SchemaKGroupedStream {
+public class SchemaKGroupedStream implements GroupedStream {
 
   private final Schema schema;
   private final KGroupedStream kgroupedStream;
@@ -52,6 +52,7 @@ public class SchemaKGroupedStream {
     this.functionRegistry = functionRegistry;
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public SchemaKTable aggregate(final Initializer initializer,
                                 final UdafAggregator aggregator,

@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class SchemaKStream {
+public class SchemaKStream implements Stream {
   
   public enum Type { SOURCE, PROJECT, FILTER, AGGREGATE, SINK, REKEY, JOIN, TOSTREAM }
 
@@ -210,7 +210,7 @@ public class SchemaKStream {
     return new SchemaKGroupedStream(schema, kgroupedStream, keyField, Collections.singletonList(this), functionRegistry);
   }
 
-  public Field getKeyField() {
+  public Field keyField() {
     return keyField;
   }
 
@@ -240,7 +240,7 @@ public class SchemaKStream {
     return output;
   }
 
-  public void setOutputNode(final OutputNode output) {
+  public void withOutputNode(final OutputNode output) {
     this.output = output;
   }
 }

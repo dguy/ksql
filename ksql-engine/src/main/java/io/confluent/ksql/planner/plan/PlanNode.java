@@ -19,14 +19,14 @@ package io.confluent.ksql.planner.plan;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.streams.StreamsBuilder;
 
 import java.util.List;
 import java.util.Map;
 
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetastoreUtil;
-import io.confluent.ksql.structured.SchemaKStream;
+import io.confluent.ksql.planner.ExecutionPlanner;
+import io.confluent.ksql.structured.PhysicalPlan;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 
@@ -65,10 +65,10 @@ public abstract class PlanNode {
     return null;
   }
 
-  public abstract SchemaKStream buildStream(final StreamsBuilder builder,
-                                            final KsqlConfig ksqlConfig,
-                                            final KafkaTopicClient kafkaTopicClient,
-                                            final MetastoreUtil metastoreUtil,
-                                            final FunctionRegistry functionRegistry,
-                                            final Map<String, Object> props);
+  public abstract PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
+                                             final KsqlConfig ksqlConfig,
+                                             final KafkaTopicClient kafkaTopicClient,
+                                             final MetastoreUtil metastoreUtil,
+                                             final FunctionRegistry functionRegistry,
+                                             final Map<String, Object> props);
 }

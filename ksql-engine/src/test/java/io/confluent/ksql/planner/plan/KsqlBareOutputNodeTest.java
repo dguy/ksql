@@ -29,13 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetaStore;
-import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.structured.LogicalPlanBuilder;
 import io.confluent.ksql.structured.SchemaKStream;
 import io.confluent.ksql.util.FakeKafkaTopicClient;
-import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.MetaStoreFixture;
 
 import static io.confluent.ksql.planner.plan.PlanTestUtil.verifyProcessorNode;
@@ -119,11 +116,9 @@ public class KsqlBareOutputNodeTest {
   private SchemaKStream build() {
     final String simpleSelectFilter = "SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
     final KsqlBareOutputNode planNode = (KsqlBareOutputNode) planBuilder.buildLogicalPlan(simpleSelectFilter);
-    return planNode.buildStream(builder, new KsqlConfig(Collections.emptyMap()),
-        new FakeKafkaTopicClient(),
-        new MetastoreUtil(),
-        new FunctionRegistry(),
-        new HashMap<>());
+    return planNode.buildPhysical(builder,
+        ksqlConfig, new FakeKafkaTopicClient(),
+        metaStoreUtil, functionRegistry, new HashMap<>());
   }
 
   private TopologyDescription.Node getNodeByName(String nodeName) {

@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class SchemaKTable extends SchemaKStream {
+public class SchemaKTable extends SchemaKStream implements Table {
 
 
   private final KTable ktable;

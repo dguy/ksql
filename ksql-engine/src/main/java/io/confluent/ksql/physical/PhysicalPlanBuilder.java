@@ -84,12 +84,9 @@ public class PhysicalPlanBuilder {
   }
 
   public QueryMetadata buildPhysicalPlan(final Pair<String, PlanNode> statementPlanPair) throws Exception {
-    final SchemaKStream resultStream = statementPlanPair.getRight().buildStream(builder,
-        ksqlConfig,
-        kafkaTopicClient,
-        metastoreUtil,
-        functionRegistry,
-        new HashMap<>());
+    final SchemaKStream resultStream = statementPlanPair.getRight().buildPhysical(builder,
+        ksqlConfig, kafkaTopicClient,
+        metaStoreUtil, functionRegistry, new HashMap<>());
     final OutputNode outputNode = resultStream.outputNode();
     boolean isBareQuery = outputNode instanceof KsqlBareOutputNode;
 
@@ -173,7 +170,7 @@ public class PhysicalPlanBuilder {
       sinkDataSource =
           new KsqlTable(outputNode.getId().toString(),
               outputNode.getSchema(),
-              schemaKStream.getKeyField(),
+              schemaKStream.keyField(),
               outputNode.getTimestampField(),
               outputNode.getKsqlTopic(),
               outputNode.getId().toString() +
@@ -183,7 +180,7 @@ public class PhysicalPlanBuilder {
       sinkDataSource =
           new KsqlStream(outputNode.getId().toString(),
               outputNode.getSchema(),
-              schemaKStream.getKeyField(),
+              schemaKStream.keyField(),
               outputNode.getTimestampField(),
               outputNode.getKsqlTopic());
     }

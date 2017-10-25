@@ -49,7 +49,7 @@ public class QueuedSchemaKStream extends SchemaKStream {
                               final Optional<Integer> limit,
                               final OutputNode outputNode) {
     super(schema, kstream, keyField, sourceSchemaKStreams, type, functionRegistry);
-    setOutputNode(outputNode);
+    withOutputNode(outputNode);
     kstream.foreach(new QueuedSchemaKStream.QueuePopulator(rowQueue, limit));
   }
 
@@ -110,8 +110,8 @@ public class QueuedSchemaKStream extends SchemaKStream {
   }
 
   @Override
-  public Field getKeyField() {
-    return super.getKeyField();
+  public Field keyField() {
+    return super.keyField();
   }
 
   @Override

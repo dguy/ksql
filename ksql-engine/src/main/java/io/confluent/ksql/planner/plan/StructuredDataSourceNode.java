@@ -25,10 +25,10 @@ import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.KsqlTable;
 import io.confluent.ksql.metastore.MetastoreUtil;
 import io.confluent.ksql.metastore.StructuredDataSource;
-import io.confluent.ksql.physical.AddTimestampColumn;
+import io.confluent.ksql.planner.ExecutionPlanner;
 import io.confluent.ksql.serde.WindowedSerde;
-import io.confluent.ksql.structured.SchemaKStream;
-import io.confluent.ksql.structured.SchemaKTable;
+import io.confluent.ksql.structured.PhysicalPlan;
+import io.confluent.ksql.structured.Table;
 import io.confluent.ksql.util.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.SchemaUtil;
@@ -36,12 +36,9 @@ import io.confluent.ksql.util.SerDeUtil;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -51,7 +48,6 @@ import org.apache.kafka.streams.kstream.Windowed;
 
 import javax.annotation.concurrent.Immutable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -125,12 +121,9 @@ public class StructuredDataSourceNode
   }
 
   @Override
-  public SchemaKStream buildStream(final StreamsBuilder builder,
-                                   final KsqlConfig ksqlConfig,
-                                   final KafkaTopicClient kafkaTopicClient,
-                                   final MetastoreUtil metastoreUtil,
-                                   final FunctionRegistry functionRegistry,
-                                   final Map<String, Object> props) {
+  public PhysicalPlan buildPhysical(final ExecutionPlanner executionPlanner,
+                                    KsqlConfig ksqlConfig, final KafkaTopicClient kafkaTopicClient,
+                                    MetastoreUtil metastoreUtil, FunctionRegistry functionRegistry, final Map<String, Object> props) {
     if (getTimestampField() != null) {
       int timestampColumnIndex = getTimeStampColumnIndex();
       ksqlConfig.put(KsqlConfig.KSQL_TIMESTAMP_COLUMN_INDEX, timestampColumnIndex);
@@ -147,28 +140,27 @@ public class StructuredDataSourceNode
         == StructuredDataSource.DataSourceType.KTABLE) {
       final KsqlTable table = (KsqlTable) getStructuredDataSource();
 
-      final KTable kTable = createKTable(
-          builder,
+      return createTable(
+          executionPlanner,
           getAutoOffsetReset(props),
           table,
           genericRowSerde,
           SerDeUtil.getRowSerDe(table.getKsqlTopic().getKsqlTopicSerDe(),
               getSchema())
       );
-      return new SchemaKTable(getSchema(), kTable,
-          getKeyField(), new ArrayList<>(),
-          table.isWindowed(),
-          SchemaKStream.Type.SOURCE, functionRegistry);
+
     }
 
-    return new SchemaKStream(getSchema(),
-        builder
-            .stream(getStructuredDataSource().getKsqlTopic().getKafkaTopicName(),
-                Consumed.with(Serdes.String(), genericRowSerde))
-            .map(nonWindowedMapper)
-            .transformValues(new AddTimestampColumn()),
-        getKeyField(), new ArrayList<>(),
-        SchemaKStream.Type.SOURCE, functionRegistry);
+    return executionPlanner.stream(getStructuredDataSource().getKsqlTopic().getKafkaTopicName(), getKeyField());
+//    return new SchemaKStream(getSchema(),
+          // NOTE: This moves into ExecutionPlanner
+//        builder
+//            .stream(getStructuredDataSource().getKsqlTopic().getKafkaTopicName(),
+//                Consumed.with(Serdes.String(), genericRowSerde))
+//            .map(nonWindowedMapper)
+//            .transformValues(new AddTimestampColumn()),
+//        getKeyField(), new ArrayList<>(),
+//        SchemaKStream.Type.SOURCE, functionRegistry);
   }
 
   private Topology.AutoOffsetReset getAutoOffsetReset(Map<String, Object> props) {
@@ -218,25 +210,29 @@ public class StructuredDataSourceNode
     return -1;
   }
 
-  private KTable createKTable(StreamsBuilder builder, final Topology.AutoOffsetReset autoOffsetReset,
-                              final KsqlTable ksqlTable,
-                              final Serde<GenericRow> genericRowSerde,
-                              final Serde<GenericRow> genericRowSerdeAfterRead) {
+  private Table createTable(ExecutionPlanner planner, final Topology.AutoOffsetReset autoOffsetReset,
+                             final KsqlTable ksqlTable,
+                             final Serde<GenericRow> genericRowSerde,
+                             final Serde<GenericRow> genericRowSerdeAfterRead) {
     if (ksqlTable.isWindowed()) {
-      return table(builder
-          .stream(ksqlTable.getKsqlTopic().getKafkaTopicName(),
-              Consumed.with(windowedSerde, genericRowSerde)
-                  .withOffsetResetPolicy(autoOffsetReset))
-          .map(windowedMapper)
-          .transformValues(new AddTimestampColumn()), windowedSerde, genericRowSerdeAfterRead);
+      return planner.windowedTable(ksqlTable.getKsqlTopic().getKafkaTopicName(), autoOffsetReset);
+        // NOTE: This would move into the implementation of ExecutionPlanner
+      //      return table(builder.
+//          .stream(ksqlTable.getKsqlTopic().getKafkaTopicName(),
+//              Consumed.with(windowedSerde, genericRowSerde)
+//                  .withOffsetResetPolicy(autoOffsetReset))
+//          .map(windowedMapper)
+//          .transformValues(new AddTimestampColumn()), windowedSerde, genericRowSerdeAfterRead);
     } else {
-      return table(builder
-              .stream(ksqlTable.getKsqlTopic().getKafkaTopicName(),
-                  Consumed.with(Serdes.String(), genericRowSerde)
-                      .withOffsetResetPolicy(autoOffsetReset))
-              .map(nonWindowedMapper)
-              .transformValues(new AddTimestampColumn()),
-          Serdes.String(), genericRowSerdeAfterRead);
+      return planner.table(ksqlTable.getKsqlTopic().getKafkaTopicName(), autoOffsetReset);
+      // NOTE: This would move into the implementation of ExecutionPlanner
+//      return table(planner
+//              .stream(ksqlTable.getKsqlTopic().getKafkaTopicName(),
+//                  Consumed.with(Serdes.String(), genericRowSerde)
+//                      .withOffsetResetPolicy(autoOffsetReset))
+//              .map(nonWindowedMapper)
+//              .transformValues(new AddTimestampColumn()),
+//          Serdes.String(), genericRowSerdeAfterRead);
     }
   }
 

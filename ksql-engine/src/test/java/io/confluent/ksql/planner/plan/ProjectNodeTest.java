@@ -66,12 +66,9 @@ public class ProjectNodeTest {
         Collections.singletonList(new BooleanLiteral("true")));
 
 
-    node.buildStream(builder,
-        ksqlConfig,
-        kafkaTopicClient,
-        metastoreUtil,
-        functionRegistry,
-        props);
+    node.buildPhysical(builder,
+        ksqlConfig, kafkaTopicClient,
+        metaStoreUtil, functionRegistry, props);
   }
 
   @Test
@@ -94,24 +91,18 @@ public class ProjectNodeTest {
             .build(),
         Arrays.asList(trueExpression, falseExpression));
 
-    node.buildStream(builder,
-        ksqlConfig,
-        kafkaTopicClient,
-        metastoreUtil,
-        functionRegistry,
-        props);
+    node.buildPhysical(builder,
+        ksqlConfig, kafkaTopicClient,
+        metaStoreUtil, functionRegistry, props);
 
     EasyMock.verify(stream);
   }
 
   private void mockSourceNode() {
     EasyMock.expect(source.getKeyField()).andReturn(new Field("field1", 0, Schema.STRING_SCHEMA));
-    EasyMock.expect(source.buildStream(anyObject(StreamsBuilder.class),
-        anyObject(KsqlConfig.class),
-        anyObject(KafkaTopicClient.class),
-        anyObject(MetastoreUtil.class),
-        anyObject(FunctionRegistry.class),
-        eq(props))).andReturn(stream);
+    EasyMock.expect(source.buildPhysical(anyObject(StreamsBuilder.class),
+        ksqlConfig, anyObject(KafkaTopicClient.class),
+        metaStoreUtil, functionRegistry, eq(props))).andReturn(stream);
   }
 
 
