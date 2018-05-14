@@ -22,19 +22,33 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.confluent.ksql.util.KsqlException;
+
 public class TestFunctionRegistry implements FunctionRegistry {
-  private final Map<String, KsqlFunction> udfs = new HashMap<>();
+  private final Map<String, UdfHolder> udfs = new HashMap<>();
   private final Map<String, AggregateFunctionFactory> udafs = new HashMap<>();
 
   @Override
-  public KsqlFunction getFunction(String functionName) {
+  public UdfHolder getFunction(String functionName) {
     return udfs.get(functionName);
   }
 
   @Override
   public boolean addFunction(KsqlFunction ksqlFunction) {
-    return udfs.putIfAbsent(ksqlFunction.getFunctionName().toUpperCase(), ksqlFunction) == null;
-
+    final String key = ksqlFunction.getFunctionName().toUpperCase();
+    try {
+      udfs.compute(key, (s, udf) -> {
+        if (udf == null) {
+          udf = new UdfHolder(key, ksqlFunction.getKudfClass(), ksqlFunction.getReturnType());
+        }
+        udf.addFunction(ksqlFunction);
+        return udf;
+      });
+    } catch (KsqlException e) {
+      // warn(function blah)
+      return false;
+    }
+    return true;
   }
 
   @Override

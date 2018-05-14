@@ -64,7 +64,6 @@ import static org.hamcrest.Matchers.not;
 public class CodeGenRunnerTest {
 
     private static final KsqlParser KSQL_PARSER = new KsqlParser();
-
     private static final int INT64_INDEX1 = 0;
     private static final int STRING_INDEX1 = 1;
     private static final int STRING_INDEX2 = 2;
@@ -79,10 +78,11 @@ public class CodeGenRunnerTest {
     private static final int MAP_INDEX1 = 11;
     private static final int MAP_INDEX2 = 12;
 
-    private MetaStore metaStore;
-    private CodeGenRunner codeGenRunner;
     private InternalFunctionRegistry functionRegistry = new InternalFunctionRegistry();
     private GenericRowValueTypeEnforcer genericRowValueTypeEnforcer;
+    private MetaStore metaStore;
+    private CodeGenRunner codeGenRunner;
+
 
     @Before
     public void init() {

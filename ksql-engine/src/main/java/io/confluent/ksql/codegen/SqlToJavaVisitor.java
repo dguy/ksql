@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.confluent.ksql.function.FunctionRegistry;
-import io.confluent.ksql.function.KsqlFunction;
 import io.confluent.ksql.function.KsqlFunctionException;
+import io.confluent.ksql.function.UdfHolder;
 import io.confluent.ksql.parser.tree.AllColumns;
 import io.confluent.ksql.parser.tree.ArithmeticBinaryExpression;
 import io.confluent.ksql.parser.tree.ArithmeticUnaryExpression;
@@ -220,7 +220,7 @@ public class SqlToJavaVisitor {
     protected Pair<String, Schema> visitFunctionCall(FunctionCall node, Boolean unmangleNames) {
       StringBuilder builder = new StringBuilder("(");
       String functionName = node.getName().getSuffix();
-      KsqlFunction ksqlFunction = functionRegistry.getFunction(functionName);
+      UdfHolder ksqlFunction = functionRegistry.getFunction(functionName);
       String javaReturnType = SchemaUtil.getJavaType(ksqlFunction.getReturnType()).getSimpleName();
       String instanceName = functionName + "_" + functionCounter++;
       builder.append("(").append(javaReturnType).append(") ")

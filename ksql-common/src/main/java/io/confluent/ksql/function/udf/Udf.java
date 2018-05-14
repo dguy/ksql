@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Confluent Inc.
+ * Copyright 2017 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,15 @@
  * limitations under the License.
  **/
 
-package io.confluent.ksql.function;
+package io.confluent.ksql.function.udf;
 
-import org.apache.kafka.connect.data.Schema;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface FunctionRegistry {
-  UdfHolder getFunction(String functionName);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Udf {
 
-  boolean addFunction(KsqlFunction ksqlFunction);
-
-  boolean isAggregate(String functionName);
-
-  KsqlAggregateFunction getAggregate(String functionName,
-                                     Schema argumentType);
-
-  void addAggregateFunctionFactory(AggregateFunctionFactory aggregateFunctionFactory);
-
-  FunctionRegistry copy();
 }

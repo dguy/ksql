@@ -22,9 +22,12 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -63,6 +66,54 @@ public class SchemaUtil {
       default:
         throw new KsqlException("Type is not supported: " + schema.type());
     }
+  }
+
+  public static Schema getSchemaFromJavaType(final Type type) {
+    if (type == String.class) {
+      return Schema.STRING_SCHEMA;
+    } else if (type == Boolean.class) {
+      return Schema.BOOLEAN_SCHEMA;
+    } else if (type == Integer.class) {
+      return Schema.INT32_SCHEMA;
+    } else if (type == Long.class) {
+      return Schema.INT64_SCHEMA;
+    } else if (type == Double.class || type == Float.class || type == Number.class) {
+      return Schema.FLOAT64_SCHEMA;
+    } else if (type instanceof ParameterizedType) {
+      return handleParametrizedType(type);
+    } else {
+      throw new KsqlException("Type is not supported: " + type);
+    }
+  }
+
+  private static Schema handleParametrizedType(final Type type) {
+    final ParameterizedType parameterizedType = (ParameterizedType) type;
+    if (parameterizedType.getRawType() == Map.class) {
+      return SchemaBuilder.map(getSchemaFromJavaType(
+          parameterizedType.getActualTypeArguments()[0]),
+          getSchemaFromJavaType(parameterizedType.getActualTypeArguments()[1]));
+    } else if (parameterizedType.getRawType() == List.class) {
+      return SchemaBuilder.array(getSchemaFromJavaType(
+          parameterizedType.getActualTypeArguments()[0]));
+    }
+    throw new KsqlException("Type is not supported: " + type);
+  }
+
+  public static Schema getSchemaFromClass(final Class clazz) {
+    if (clazz == String.class) {
+      return Schema.STRING_SCHEMA;
+    } else if (clazz == Boolean.class) {
+      return Schema.BOOLEAN_SCHEMA;
+    } else if (clazz == Integer.class) {
+      return Schema.INT32_SCHEMA;
+    } else if (clazz == Long.class) {
+      return Schema.INT64_SCHEMA;
+    } else if (clazz == Double.class || clazz == Float.class) {
+      return Schema.FLOAT64_SCHEMA;
+    } else {
+      throw new KsqlException("Clazz is not supported: " + clazz);
+    }
+
   }
 
   public static Optional<Field> getFieldByName(final Schema schema, final String fieldName) {
@@ -435,4 +486,5 @@ public class SchemaUtil {
             + fields
     );
   }
+
 }

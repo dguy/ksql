@@ -18,7 +18,7 @@ package io.confluent.ksql.util;
 
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.function.KsqlAggregateFunction;
-import io.confluent.ksql.function.KsqlFunction;
+import io.confluent.ksql.function.UdfHolder;
 import io.confluent.ksql.parser.tree.ArithmeticBinaryExpression;
 import io.confluent.ksql.parser.tree.BooleanLiteral;
 import io.confluent.ksql.parser.tree.Cast;
@@ -176,7 +176,7 @@ public class ExpressionTypeManager
   protected Expression visitFunctionCall(final FunctionCall node,
                                          final ExpressionTypeContext expressionTypeContext) {
 
-    KsqlFunction ksqlFunction = functionRegistry.getFunction(node.getName().getSuffix());
+    UdfHolder ksqlFunction = functionRegistry.getFunction(node.getName().getSuffix());
     if (ksqlFunction != null) {
       expressionTypeContext.setSchema(ksqlFunction.getReturnType());
     } else if (functionRegistry.isAggregate(node.getName().getSuffix())) {

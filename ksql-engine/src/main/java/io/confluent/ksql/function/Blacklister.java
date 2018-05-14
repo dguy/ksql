@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Confluent Inc.
+ * Copyright 2017 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,12 @@
 
 package io.confluent.ksql.function;
 
-import org.apache.kafka.connect.data.Schema;
+public interface Blacklister {
 
-public interface FunctionRegistry {
-  UdfHolder getFunction(String functionName);
-
-  boolean addFunction(KsqlFunction ksqlFunction);
-
-  boolean isAggregate(String functionName);
-
-  KsqlAggregateFunction getAggregate(String functionName,
-                                     Schema argumentType);
-
-  void addAggregateFunctionFactory(AggregateFunctionFactory aggregateFunctionFactory);
-
-  FunctionRegistry copy();
+  /**
+   * Check if the named resource is in the blacklist and return true if it is
+   * @param resourceName name of the resource to check against the blacklist
+   * @return true if the resource is blacklisted, false otherwise
+   */
+  boolean blacklisted(final String resourceName);
 }

@@ -28,6 +28,7 @@ import io.confluent.ksql.function.AggregateFunctionFactory;
 import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.function.KsqlAggregateFunction;
 import io.confluent.ksql.function.KsqlFunction;
+import io.confluent.ksql.function.UdfHolder;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.KsqlReferentialIntegrityException;
 import io.confluent.ksql.util.Pair;
@@ -216,21 +217,19 @@ public class MetaStoreImpl implements MetaStore, Cloneable {
   }
 
   @Override
-  public KsqlFunction getFunction(final String functionName) {
+  public UdfHolder getFunction(String functionName) {
     return functionRegistry.getFunction(functionName);
   }
 
   @Override
-  public boolean addFunction(final KsqlFunction ksqlFunction) {
+  public boolean addFunction(KsqlFunction ksqlFunction) {
     return functionRegistry.addFunction(ksqlFunction);
   }
 
-  @Override
-  public boolean isAggregate(final String functionName) {
+  public boolean isAggregate(String functionName) {
     return functionRegistry.isAggregate(functionName);
   }
 
-  @Override
   public KsqlAggregateFunction getAggregate(final String functionName,
                                             final Schema argumentType) {
     return functionRegistry.getAggregate(functionName, argumentType);

@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Confluent Inc.
+ * Copyright 2017 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,27 @@
 
 package io.confluent.ksql.function;
 
-import org.apache.kafka.connect.data.Schema;
+import java.util.List;
+import java.util.Map;
 
-public interface FunctionRegistry {
-  UdfHolder getFunction(String functionName);
+import io.confluent.ksql.function.udf.Udf;
+import io.confluent.ksql.function.udf.UdfClass;
 
-  boolean addFunction(KsqlFunction ksqlFunction);
+@UdfClass(name = "my_udf", returnType = String.class)
+public class MyUdf {
 
-  boolean isAggregate(String functionName);
+  @Udf
+  public String eval(final String value) {
+    return value;
+  }
 
-  KsqlAggregateFunction getAggregate(String functionName,
-                                     Schema argumentType);
+  @Udf
+  public String eval(final Map<String, Integer> map) {
+    return map.toString();
+  }
 
-  void addAggregateFunctionFactory(AggregateFunctionFactory aggregateFunctionFactory);
-
-  FunctionRegistry copy();
+  @Udf
+  public String eval(final List<String> foo) {
+    return foo.toString();
+  }
 }

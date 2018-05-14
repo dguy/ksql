@@ -50,14 +50,14 @@ import java.util.Map;
 
 public class InternalFunctionRegistry implements FunctionRegistry {
 
-  private Map<String, KsqlFunction> ksqlFunctionMap = new HashMap<>();
+  private Map<String, UdfHolder> ksqlFunctionMap = new HashMap<>();
   private Map<String, AggregateFunctionFactory> aggregateFunctionMap = new HashMap<>();
 
   public InternalFunctionRegistry() {
     init();
   }
 
-  private InternalFunctionRegistry(final Map<String, KsqlFunction> ksqlFunctionMap,
+  private InternalFunctionRegistry(final Map<String, UdfHolder> ksqlFunctionMap,
                                    final Map<String, AggregateFunctionFactory>
                                        aggregateFunctionMap) {
     this.ksqlFunctionMap = ksqlFunctionMap;
@@ -81,9 +81,9 @@ public class InternalFunctionRegistry implements FunctionRegistry {
     KsqlFunction substring = new KsqlFunction(Schema.STRING_SCHEMA, Arrays.asList(Schema
                                                                                   .STRING_SCHEMA,
                                                                               Schema
-                                                                                  .INT32_SCHEMA,
+                                                                                  .INT64_SCHEMA,
                                                                               Schema
-                                                                                  .INT32_SCHEMA),
+                                                                                  .INT64_SCHEMA),
                                             "SUBSTRING", SubstringKudf
                                                 .class);
     addFunction(substring);
@@ -113,6 +113,10 @@ public class InternalFunctionRegistry implements FunctionRegistry {
     KsqlFunction abs = new KsqlFunction(Schema.FLOAT64_SCHEMA, Arrays.asList(Schema.FLOAT64_SCHEMA),
                                       "ABS", AbsKudf.class);
     addFunction(abs);
+    addFunction(new KsqlFunction(Schema.FLOAT64_SCHEMA,
+        Collections.singletonList(Schema.INT64_SCHEMA),
+        "ABS",
+        AbsKudf.class));
 
     KsqlFunction ceil = new KsqlFunction(Schema.FLOAT64_SCHEMA,
                                          Arrays.asList(Schema.FLOAT64_SCHEMA),
@@ -200,15 +204,26 @@ public class InternalFunctionRegistry implements FunctionRegistry {
 
   }
 
-  @Override
-  public KsqlFunction getFunction(final String functionName) {
+  public UdfHolder getFunction(String functionName) {
     return ksqlFunctionMap.get(functionName.toUpperCase());
   }
 
   @Override
   public boolean addFunction(final KsqlFunction ksqlFunction) {
     final String key = ksqlFunction.getFunctionName().toUpperCase();
-    return ksqlFunctionMap.putIfAbsent(key, ksqlFunction) == null;
+    try {
+      ksqlFunctionMap.compute(key, (s, udf) -> {
+        if (udf == null) {
+          udf = new UdfHolder(key, ksqlFunction.getKudfClass(), ksqlFunction.getReturnType());
+        }
+        udf.addFunction(ksqlFunction);
+        return udf;
+      });
+    } catch (KsqlException e) {
+      // warn(function blah)
+      return false;
+    }
+    return true;
   }
 
   @Override
@@ -241,6 +256,5 @@ public class InternalFunctionRegistry implements FunctionRegistry {
         new HashMap<>(ksqlFunctionMap),
         new HashMap<>(aggregateFunctionMap));
   }
-
 
 }

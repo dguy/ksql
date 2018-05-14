@@ -66,6 +66,9 @@ import io.confluent.ksql.ddl.DdlConfig;
 import io.confluent.ksql.ddl.commands.CreateStreamCommand;
 import io.confluent.ksql.ddl.commands.RegisterTopicCommand;
 import io.confluent.ksql.exception.KafkaTopicException;
+import io.confluent.ksql.function.FileBasedBlacklister;
+import io.confluent.ksql.function.UdfCompiler;
+import io.confluent.ksql.function.UdfLoader;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.parser.tree.Expression;
 import io.confluent.ksql.parser.tree.PrimitiveType;
@@ -295,6 +298,11 @@ public class KsqlRestApplication extends Application<KsqlRestConfig> implements 
 
     KsqlEngine ksqlEngine = new KsqlEngine(ksqlConfig);
     KafkaTopicClient topicClient = ksqlEngine.getTopicClient();
+    final File pluginDir = new File(ksqlInstallDir + "/ext");
+    new UdfLoader(ksqlEngine.getMetaStore(), pluginDir,
+        Thread.currentThread().getContextClassLoader(),
+        new FileBasedBlacklister(new File(pluginDir, "resource-blacklist.txt")),
+        new UdfCompiler()).load();
 
     final String kafkaClusterId = getKafkaClusterId(ksqlConfig);
 

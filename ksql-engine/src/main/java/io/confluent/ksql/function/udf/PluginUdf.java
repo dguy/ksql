@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Confluent Inc.
+ * Copyright 2017 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,23 @@
  * limitations under the License.
  **/
 
-package io.confluent.ksql.function;
+package io.confluent.ksql.function.udf;
 
-import org.apache.kafka.connect.data.Schema;
+import io.confluent.ksql.function.CustomUdf;
 
-public interface FunctionRegistry {
-  UdfHolder getFunction(String functionName);
+public class PluginUdf implements Kudf {
 
-  boolean addFunction(KsqlFunction ksqlFunction);
+  private final CustomUdf udf;
+  private final Object actualUdf;
 
-  boolean isAggregate(String functionName);
+  public PluginUdf(final CustomUdf udf,
+                   final Object actualUdf) {
+    this.udf = udf;
+    this.actualUdf = actualUdf;
+  }
 
-  KsqlAggregateFunction getAggregate(String functionName,
-                                     Schema argumentType);
-
-  void addAggregateFunctionFactory(AggregateFunctionFactory aggregateFunctionFactory);
-
-  FunctionRegistry copy();
+  @Override
+  public Object evaluate(final Object... args) {
+    return udf.eval(actualUdf, args);
+  }
 }
