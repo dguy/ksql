@@ -82,6 +82,8 @@ public class KsqlConfig extends AbstractConfig implements Cloneable {
   public static final boolean defaultAvroSchemaUnionNull = true;
   public static final String KSQL_STREAMS_PREFIX = "ksql.streams.";
 
+  public static final String KSQL_COLLECT_UDF_METRICS = "ksql.udf.collect.metrics";
+
   private final Map<String, Object> ksqlConfigProps;
   private final Map<String, Object> ksqlStreamConfigProps;
 
@@ -160,7 +162,15 @@ public class KsqlConfig extends AbstractConfig implements Cloneable {
             true,
             ConfigDef.Importance.MEDIUM,
             "Whether or not custom UDF jars found in the ext dir should be loaded. Default is true "
+        ).define(
+            KSQL_COLLECT_UDF_METRICS,
+            ConfigDef.Type.BOOLEAN,
+            false,
+            ConfigDef.Importance.LOW,
+            "Whether or not metrics should be collected for custom udfs. Defauls is false. Note: "
+                + "this will add some overhead to udf invocation."
         )
+
         .withClientSslSupport();
   }
 
