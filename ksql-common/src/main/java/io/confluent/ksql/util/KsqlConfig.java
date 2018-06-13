@@ -167,8 +167,9 @@ public class KsqlConfig extends AbstractConfig implements Cloneable {
             ConfigDef.Type.BOOLEAN,
             false,
             ConfigDef.Importance.LOW,
-            "Whether or not metrics should be collected for custom udfs. Defauls is false. Note: "
-                + "this will add some overhead to udf invocation."
+            "Whether or not metrics should be collected for custom udfs. Default is false. Note: "
+                + "this will add some overhead to udf invocation. It is recommended that this "
+                + " be set to false in production."
         )
 
         .withClientSslSupport();
