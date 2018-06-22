@@ -42,7 +42,7 @@ public class #FUNCTION_CLASS_NAME extends BaseAggregateFunction #ADD_TABLE_AGG{
   public #FUNCTION_CLASS_NAME(final List<Schema> args,
                               final Schema returnType,
                               final Optional<Metrics> metrics) {
-    super("#NAME", -1, null, returnType, args);
+    super("#NAME", -1, null, returnType, args, "#DESCRIPTION");
     this.arguments = args;
     initMetrics(metrics);
   }
@@ -53,32 +53,32 @@ public class #FUNCTION_CLASS_NAME extends BaseAggregateFunction #ADD_TABLE_AGG{
       final String aggSensorName = "ksql-udaf-aggregate-#NAME-#METHOD";
       if(theMetrics.getSensor(aggSensorName) == null) {
       final Sensor sensor = theMetrics.sensor(aggSensorName);
-        sensor.add(theMetrics.metricName(aggSensorName + "-avg", aggSensorName,
+        sensor.add(theMetrics.metricName(aggSensorName + "-avg", "ksql-udaf",
         "Average time for an aggregate invocation of #NAME #METHOD udaf"),
         new Avg());
-        sensor.add(theMetrics.metricName(aggSensorName + "-max", aggSensorName,
+        sensor.add(theMetrics.metricName(aggSensorName + "-max", "ksql-udaf",
         "Max time for an aggregate invocation of #NAME #METHOD udaf"),
         new Max());
-        sensor.add(theMetrics.metricName(aggSensorName + "-count", aggSensorName,
+        sensor.add(theMetrics.metricName(aggSensorName + "-count", "ksql-udaf",
         "Total number of aggregate invocations of #NAME #METHOD udaf"),
         new Count());
-        sensor.add(theMetrics.metricName(aggSensorName + "-rate", aggSensorName,
+        sensor.add(theMetrics.metricName(aggSensorName + "-rate", "ksql-udaf",
         "The average number of occurrences of aggregate #NAME #METHOD operation per second udaf"),
         new Rate(TimeUnit.SECONDS, new Count()));
       }
       final String mergeSensorName = "ksql-udaf-merge-#NAME-#METHOD";
       if(theMetrics.getSensor(mergeSensorName) == null) {
         final Sensor sensor = theMetrics.sensor(mergeSensorName);
-        sensor.add(theMetrics.metricName(mergeSensorName + "-avg", mergeSensorName,
+        sensor.add(theMetrics.metricName(mergeSensorName + "-avg", "ksql-udaf",
         "Average time for a merge invocation of #NAME #METHOD udaf"),
         new Avg());
-        sensor.add(theMetrics.metricName(mergeSensorName + "-max", mergeSensorName,
+        sensor.add(theMetrics.metricName(mergeSensorName + "-max", "ksql-udaf",
         "Max time for a merge invocation of #NAME #METHOD udaf"),
         new Max());
-        sensor.add(theMetrics.metricName(mergeSensorName + "-count", mergeSensorName,
+        sensor.add(theMetrics.metricName(mergeSensorName + "-count", "ksql-udaf",
         "Total number of merge invocations of #NAME #METHOD udaf"),
         new Count());
-        sensor.add(theMetrics.metricName(mergeSensorName + "-rate", mergeSensorName,
+        sensor.add(theMetrics.metricName(mergeSensorName + "-rate", "ksql-udaf",
         "The average number of occurrences of merge #NAME #METHOD operation per second udaf"),
         new Rate(TimeUnit.SECONDS, new Count()));
       }
@@ -96,7 +96,7 @@ public class #FUNCTION_CLASS_NAME extends BaseAggregateFunction #ADD_TABLE_AGG{
                               final Schema returnType,
                               final Optional<Sensor> aggregateSensor,
                               final Optional<Sensor> mergeSensor) {
-    super("#NAME", udafIndex, createSupplier(udaf), returnType, args);
+    super("#NAME", udafIndex, createSupplier(udaf), returnType, args, "#DESCRIPTION");
     this.udaf = udaf;
     this.udafIndex = udafIndex;
     this.aggregateSensor = aggregateSensor;
@@ -123,7 +123,7 @@ public class #FUNCTION_CLASS_NAME extends BaseAggregateFunction #ADD_TABLE_AGG{
     } finally {
       aggregateSensor.ifPresent(new Consumer() {
         public void accept(final Object sensor) {
-        ((Sensor)sensor).record(time.nanoseconds() - start);
+          ((Sensor)sensor).record(time.nanoseconds() - start);
         }
       });
     }
