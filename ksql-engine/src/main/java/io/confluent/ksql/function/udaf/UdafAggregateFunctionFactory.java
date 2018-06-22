@@ -27,18 +27,18 @@ import io.confluent.ksql.function.KsqlAggregateFunction;
 import io.confluent.ksql.function.udf.UdfMetadata;
 
 public class UdafAggregateFunctionFactory extends AggregateFunctionFactory {
-  private final Map<List<Schema>, KsqlAggregateFunction> aggregateFunctions = new HashMap<>();
+  private final Map<List<Schema>, KsqlAggregateFunction<?, ?>> aggregateFunctions = new HashMap<>();
 
   @SuppressWarnings("unchecked")
   public UdafAggregateFunctionFactory(final UdfMetadata metadata,
-                                      final List<KsqlAggregateFunction> functionList) {
-    super(metadata.getName(), functionList);
+                                      final List<KsqlAggregateFunction<?, ?>> functionList) {
+    super(metadata, functionList);
     functionList
         .forEach(function -> aggregateFunctions.put(function.getArgTypes(), function));
   }
 
   @Override
-  public KsqlAggregateFunction getProperAggregateFunction(final List<Schema> argTypeList) {
+  public KsqlAggregateFunction<?, ?> getProperAggregateFunction(final List<Schema> argTypeList) {
     return aggregateFunctions.get(argTypeList);
   }
 }
